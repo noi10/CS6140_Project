@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 import json
@@ -104,6 +105,9 @@ with graph.as_default():
     test_prediction = tf.nn.softmax(evalModel(tf_test_dataset))
     all_train_prediction = tf.nn.softmax(evalModel(tf_train_all_dataset))
 
+    loss_vec = []
+    train_acc = []
+    valid_acc = []
     
     with tf.Session(graph=graph) as session:
         init = tf.global_variables_initializer()
@@ -117,6 +121,13 @@ with graph.as_default():
             feed_dict = {tf_train_dataset : batch_data, tf_train_labels : batch_labels}
             _, l, predictions = session.run([optimizer, loss, train_prediction], feed_dict=feed_dict)
 
+            temp_loss = l
+            loss_vec.append(temp_loss)
+            temp_train_acc = accuracy(all_train_prediction.eval(), trainLabels)
+            train_acc.append(temp_train_acc)
+            temp_valid_acc = accuracy(valid_prediction.eval(), validateLabels)
+            valid_acc.append(temp_valid_acc)
+
             if (step%50==0):
                 print("Minibatch loss at step %d: %f" % (step,l))
                 print("Minibatch accuracy: %.1f%%" % accuracy(predictions, batch_labels))
@@ -124,5 +135,21 @@ with graph.as_default():
                 print("Validation accuracy: %.1f%%" % accuracy(valid_prediction.eval(), validateLabels))
         print("Test accuracy %.1f%%" % accuracy(test_prediction.eval(), testLabels))
 
-
+    # Plot loss over time
+    plt.plot(loss_vec, 'k-')
+    plt.title('Cross Entropy Loss per Step')
+    plt.xlabel('Step')
+    plt.ylabel('Cross Entropy Loss')
+    plt.savefig('./figure/nn_loss.png')
+    plt.close()
+    
+    # Plot train and test accuracy
+    plt.plot(train_acc, 'k-', label='Train Set Accuracy')
+    plt.plot(valid_acc, 'r--', label='Validate Set Accuracy')
+    plt.title('Train and Validate Accuracy')
+    plt.xlabel('Step')
+    plt.ylabel('Accuracy')
+    plt.legend(loc='lower right')
+    plt.savefig('./figure/nn_acc.png')
+    plt.close()
 
