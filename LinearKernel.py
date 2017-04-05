@@ -70,7 +70,7 @@ pred_kernel = tf.matmul(x_data, tf.transpose(prediction_grid))
 #pred_kernel = tf.exp(tf.multiply(gamma, tf.abs(pred_sq_dist)))
 
 prediction_output = tf.matmul(tf.multiply(y_target,b), pred_kernel)
-prediction = tf.arg_max(prediction_output-tf.expand_dims(tf.reduce_mean(prediction_output,1), 1), 0)
+prediction = tf.arg_max(prediction_output, 0)
 accuracy = tf.reduce_mean(tf.cast(tf.equal(prediction, tf.argmax(y_target,0)), tf.float32))
 
 
