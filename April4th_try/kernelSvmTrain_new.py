@@ -132,14 +132,12 @@ for i in range(100000):
     #train_acc = sess.run(accuracy, feed_dict = {x_data: x_vals,
     #                                            y_target: y_vals,
     #                                            prediction_grid: x_vals})
-    if (i+1)%50==0:
-        print('Step #' + str(i+1))
-        print('Loss = ' + str(temp_loss))
-        print('batch_accuracy = ' + str(acc_temp))
+    #if (i+1)%50==0:
+    print('Step #' + str(i+1))
+    print('Loss = ' + str(temp_loss))
+    print('batch_accuracy = ' + str(acc_temp))
     #    print('train_accuracy = ' + str(train_acc))
-        valid_prediction = sess.run(prediction, feed_dict={x_data: rand_x,
-                                             y_target: rand_y,
-                                             prediction_grid:validateFeatures})
-        valid_acc = sess.run(tf.reduce_mean(tf.cast(tf.equal(valid_prediction, tf.argmax(validateLabels,0)), tf.float32)))
-        print('validate_accuracy = ' + str(valid_acc))
+    valid_prediction = sess.run(prediction, feed_dict={x_data: rand_x, y_target: rand_y, prediction_grid:validateFeatures})
+    valid_acc = sess.run(tf.reduce_mean(tf.cast(tf.equal(valid_prediction, tf.argmax(validateLabels,0)), tf.float32)))
+    print('validate_accuracy = ' + str(valid_acc))
         
