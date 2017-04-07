@@ -3,9 +3,37 @@ import numpy as np
 import tensorflow as tf
 import json
 
+with open('./txtdata/yt8m_100/train_features.txt','r') as infile:
+    trainFeatures = np.array(json.load(infile)).astype(np.float32)
+infile.close()
+
+with open('./txtdata/yt8m_100/validate_features.txt','r') as infile:
+    validateFeatures = np.array(json.load(infile)).astype(np.float32)
+infile.close()
+
+with open('./txtdata/yt8m_100/test_features.txt','r') as infile:
+    testFeatures = np.array(json.load(infile)).astype(np.float32)
+infile.close()
+
+with open('./txtdata/yt8m_100/train_labels.txt','r') as infile:
+    trainLabels = np.array(json.load(infile)).astype(np.float32)
+infile.close()
+
+with open('./txtdata/yt8m_100/validate_labels.txt','r') as infile:
+    validateLabels = np.array(json.load(infile)).astype(np.float32)
+infile.close()
+
+with open('./txtdata/yt8m_100/test_labels.txt','r') as infile:
+    testLabels = np.array(json.load(infile)).astype(np.float32)
+infile.close()
+
+
+# Create graph
 graph = tf.Graph()
 with graph.as_default():
-    batch_size = 256
+    
+	# constant
+	batch_size = 256
     beta = 0.001
     num_steps = 500
     base_learning_rate = 0.003
@@ -19,29 +47,7 @@ with graph.as_default():
     N = 30
     #pkeep = 0.9
     
-    with open('./txtdata/yt8m_100/train_features.txt','r') as infile:
-        trainFeatures = np.array(json.load(infile)).astype(np.float32)
-    infile.close()
 
-    with open('./txtdata/yt8m_100/validate_features.txt','r') as infile:
-        validateFeatures = np.array(json.load(infile)).astype(np.float32)
-    infile.close()
-
-    with open('./txtdata/yt8m_100/test_features.txt','r') as infile:
-        testFeatures = np.array(json.load(infile)).astype(np.float32)
-    infile.close()
-
-    with open('./txtdata/yt8m_100/train_labels.txt','r') as infile:
-        trainLabels = np.array(json.load(infile)).astype(np.float32)
-    infile.close()
-
-    with open('./txtdata/yt8m_100/validate_labels.txt','r') as infile:
-        validateLabels = np.array(json.load(infile)).astype(np.float32)
-    infile.close()
-
-    with open('./txtdata/yt8m_100/test_labels.txt','r') as infile:
-        testLabels = np.array(json.load(infile)).astype(np.float32)
-    infile.close()
 
     def trainModel(data):
         Y1 = tf.nn.relu(tf.matmul(data, w1_logit) + b1_logit)
@@ -81,6 +87,8 @@ with graph.as_default():
     w4_logit = tf.Variable(tf.truncated_normal([M, N], stddev=0.1))
     b4_logit = tf.Variable(tf.zeros([N]))
 
+	
+	# loss
     w_logit = tf.Variable(tf.truncated_normal([N, num_labels]))
     b_logit = tf.Variable(tf.zeros([num_labels]))
 
@@ -98,7 +106,9 @@ with graph.as_default():
       learning_rate_decay_examples,
       learning_rate_decay,
       staircase=True)
-    optimizer = tf.train.AdamOptimizer(learning_rate).minimize(total_loss, global_step=global_step) 
+    
+	# optimizer
+	optimizer = tf.train.AdamOptimizer(learning_rate).minimize(total_loss, global_step=global_step) 
 
     train_prediction = tf.nn.softmax(logits)
     valid_prediction = tf.nn.softmax(evalModel(tf_valid_dataset))
@@ -113,7 +123,10 @@ with graph.as_default():
         init = tf.global_variables_initializer()
         session.run(init)
         print("Initialize")
-        for step in range(num_steps):
+        
+		
+		# train loop
+		for step in range(num_steps):
             rand_index = np.random.choice(len(trainFeatures), size=batch_size)
             batch_data = trainFeatures[rand_index]
             batch_labels = trainLabels[rand_index]

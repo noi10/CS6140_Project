@@ -3,19 +3,11 @@
 #
 # This function wll illustrate how to
 # implement the gaussian kernel with
-# multiple classes on the iris dataset.
+# multiple classes on the yt8m dataset.
 #
 # Gaussian Kernel:
 # K(x1, x2) = exp(-gamma * abs(x1 - x2)^2)
 #
-# X : (Sepal Length, Petal Width)
-# Y: (I. setosa, I. virginica, I. versicolor) (3 classes)
-#
-# Basic idea: introduce an extra dimension to do
-# one vs all classification.
-#
-# The prediction of a point will be the category with
-# the largest margin or distance to boundary.
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -66,7 +58,7 @@ prediction_grid = tf.placeholder(shape=[None, 1152], dtype=tf.float32)
 
 # Create variables for svm
 b = tf.Variable(tf.random_normal(shape=[10, batch_size]))
-#b = tf.Variable(tf.random_normal(shape=[10]))
+
 
 # Gaussian (RBF) kernel
 gamma = tf.constant(-0.05)
@@ -75,6 +67,7 @@ dist = tf.reshape(dist, [-1,1])
 sq_dists = tf.add(tf.subtract(dist, tf.multiply(2., tf.matmul(x_data, tf.transpose(x_data)))), tf.transpose(dist))
 my_kernel = tf.exp(tf.multiply(gamma, tf.abs(sq_dists)))
 #my_kernel = tf.matmul(x_data, tf.transpose(x_data))
+
 # Declare function to do reshape/batch multiplication
 def reshape_matmul(mat):
     v1 = tf.expand_dims(mat, 1)
@@ -125,9 +118,7 @@ for i in range(2500):
     acc_temp = sess.run(accuracy, feed_dict={x_data: rand_x,
                                              y_target: rand_y,
                                              prediction_grid:rand_x})
-    #train_acc = sess.run(accuracy, feed_dict = {x_data: x_vals,
-    #                                            y_target: y_vals,
-    #                                            prediction_grid: x_vals})
+
     if (i+1)%100==0:
         print('Step #' + str(i+1))
         print('Loss = ' + str(temp_loss))
