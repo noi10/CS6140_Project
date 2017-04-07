@@ -4,27 +4,27 @@ from tensorflow.python.framework import ops
 import json
 ops.reset_default_graph()
 
-with open('./txtdata/train_features.txt','r') as infile:
+with open('./txtdata/yt8m_100/train_features.txt','r') as infile:
     trainFeatures = np.array(json.load(infile)).astype(np.float32)
 infile.close()
 
-with open('./txtdata/validate_features.txt','r') as infile:
+with open('./txtdata/yt8m_100/validate_features.txt','r') as infile:
     validateFeatures = np.array(json.load(infile)).astype(np.float32)
 infile.close()
 
-with open('./txtdata/test_features.txt','r') as infile:
+with open('./txtdata/yt8m_100/test_features.txt','r') as infile:
     testFeatures = np.array(json.load(infile)).astype(np.float32)
 infile.close()
 
-with open('./txtdata/svm_train_labels.txt','r') as infile:
+with open('./txtdata/yt8m_100/svm_train_labels.txt','r') as infile:
     trainLabels = np.transpose(np.array(json.load(infile)).astype(np.float32))
 infile.close()
 
-with open('./txtdata/svm_validate_labels.txt','r') as infile:
+with open('./txtdata/yt8m_100/svm_validate_labels.txt','r') as infile:
     validateLabels = np.transpose(np.array(json.load(infile)).astype(np.float32))
 infile.close()
 
-with open('./txtdata/test_labels.txt','r') as infile:
+with open('./txtdata/yt8m_100/test_labels.txt','r') as infile:
     testLabels = np.array(json.load(infile)).astype(np.float32)
 infile.close()
 
@@ -35,7 +35,7 @@ sess = tf.Session()
 x_vals = trainFeatures
 y_vals = trainLabels
 
-batch_size = 1024
+batch_size = 2048
 num_features = 1152
 num_labels = 10
 regulation_rate = 5e3
@@ -62,10 +62,10 @@ first_term = tf.reduce_sum(b)
 b_vec_cross = tf.matmul(tf.transpose(b), b)
 y_target_cross = reshape_matmul(y_target)
 
-#second_term = tf.reduce_sum(tf.multiply(my_kernel, tf.multiply(b_vec_cross, y_target_cross)),[1,2])
-second_term = tf.reduce_sum(tf.multiply(my_kernel, tf.multiply(b_vec_cross, y_target_cross)))
+second_term = tf.reduce_sum(tf.multiply(my_kernel, tf.multiply(b_vec_cross, y_target_cross)),[1,2])
+#second_term = tf.reduce_sum(tf.multiply(my_kernel, tf.multiply(b_vec_cross, y_target_cross)))
 loss = tf.reduce_sum(tf.negative(tf.subtract(first_term, second_term)))
-loss += regulation_rate * tf.nn.l2_loss(b)
+#loss += regulation_rate * tf.nn.l2_loss(b)
 
 
 
@@ -80,7 +80,21 @@ prediction = tf.arg_max(prediction_output, 0)
 accuracy = tf.reduce_mean(tf.cast(tf.equal(prediction, tf.argmax(y_target,0)), tf.float32))
 
 
-my_opt = tf.train.AdamOptimizer(0.1)
+#base_learning_rate = 0.05
+#learning_rate_decay_examples = 2000
+#learning_rate_decay = 0.2
+#global_step = tf.Variable(0, trainable=False)
+#learning_rate = tf.train.exponential_decay(
+#  base_learning_rate,
+#  global_step,
+#  learning_rate_decay_examples,
+#  learning_rate_decay,
+#  staircase=True)
+#train_step = tf.train.AdamOptimizer(learning_rate).minimize(loss, global_step=global_step)
+
+
+
+my_opt = tf.train.AdamOptimizer(0.01)
 train_step = my_opt.minimize(loss)
 
 init = tf.global_variables_initializer()
@@ -88,10 +102,12 @@ sess.run(init)
 
 loss_vec = []
 batch_accuracy = []
-for i in range(2000):
+for i in range(2500):
     rand_index = np.random.choice(len(x_vals), size=batch_size)
     rand_x = x_vals[rand_index]
     rand_y = y_vals[:,rand_index]
+    #rand_x = x_vals[:batch_size]
+    #rand_y = y_vals[:,:batch_size]
     sess.run(train_step, feed_dict={x_data: rand_x, y_target: rand_y})
     
     temp_loss = sess.run(loss, feed_dict={x_data: rand_x, y_target: rand_y})
@@ -100,7 +116,7 @@ for i in range(2000):
     acc_temp = sess.run(accuracy, feed_dict={x_data: rand_x, y_target: rand_y, prediction_grid:rand_x})
     batch_accuracy.append(acc_temp)
     
-    if (i+1)%100==0:
+    if (i+1)%50==0:
         print('Step #' + str(i+1))
         print('Loss = ' + str(temp_loss))
         print('Mini Batch accuracy = ' + str(acc_temp))

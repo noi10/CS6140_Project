@@ -25,29 +25,29 @@ from tensorflow.python.framework import ops
 ops.reset_default_graph()
 
 
-with open('./txtdata/train_features.txt','r') as infile:
+with open('./txtdata/yt8m_100/train_features.txt','r') as infile:
     trainFeatures = np.array(json.load(infile)).astype(np.float32)
 infile.close()
 
-with open('./txtdata/validate_features.txt','r') as infile:
+with open('./txtdata/yt8m_100/validate_features.txt','r') as infile:
     validateFeatures = np.array(json.load(infile)).astype(np.float32)
 infile.close()
 
-#with open('./txtdata/test_features.txt','r') as infile:
-#    testFeatures = np.array(json.load(infile)).astype(np.float32)
-#infile.close()
+with open('./txtdata/yt8m_100/test_features.txt','r') as infile:
+    testFeatures = np.array(json.load(infile)).astype(np.float32)
+infile.close()
 
-with open('./txtdata/svm_train_labels.txt','r') as infile:
+with open('./txtdata/yt8m_100/svm_train_labels.txt','r') as infile:
     trainLabels = np.array(json.load(infile)).astype(np.float32)
 infile.close()
 
-with open('./txtdata/validate_labels.txt','r') as infile:
+with open('./txtdata/yt8m_100/validate_labels.txt','r') as infile:
     validateLabels = np.transpose(np.array(json.load(infile)).astype(np.float32))
 infile.close()
 
-#with open('./txtdata/test_labels.txt','r') as infile:
-#    testLabels = np.array(json.load(infile)).astype(np.float32)
-#infile.close()
+with open('./txtdata/yt8m_100/test_labels.txt','r') as infile:
+    testLabels = np.transpose(np.array(json.load(infile)).astype(np.float32))
+infile.close()
     
 # Create graph
 sess = tf.Session()
@@ -58,7 +58,6 @@ y_vals = np.transpose(trainLabels)
 
 # Declare batch size
 batch_size = 2048
-regulation_rate = 100.0
 
 # Initialize placeholders
 x_data = tf.placeholder(shape=[None, 1152], dtype=tf.float32)
@@ -87,9 +86,8 @@ first_term = tf.reduce_sum(b)
 b_vec_cross = tf.matmul(tf.transpose(b), b)
 y_target_cross = reshape_matmul(y_target)
 
-second_term = tf.reduce_sum(tf.multiply(my_kernel, tf.multiply(b_vec_cross, y_target_cross)))
+second_term = tf.reduce_sum(tf.multiply(my_kernel, tf.multiply(b_vec_cross, y_target_cross)),[1,2])
 loss = tf.reduce_sum(tf.negative(tf.subtract(first_term, second_term)))
-#loss += regulation_rate * tf.nn.l2_loss(b)
 
 # Gaussian (RBF) prediction kernel
 rA = tf.reshape(tf.reduce_sum(tf.square(x_data), 1),[-1,1])
@@ -115,12 +113,10 @@ init = tf.global_variables_initializer()
 sess.run(init)
 
 # Training loop
-for i in range(100000):
-    #rand_index = np.random.choice(len(x_vals), size=batch_size)
-    #rand_x = x_vals[rand_index]
-    #rand_y = y_vals[:,rand_index]
-    rand_x = x_vals[:batch_size]
-    rand_y = y_vals[:,:batch_size]
+for i in range(2500):
+    rand_index = np.random.choice(len(x_vals), size=batch_size)
+    rand_x = x_vals[rand_index]
+    rand_y = y_vals[:,rand_index]
     #print(rand_y)
     sess.run(optimizer, feed_dict={x_data: rand_x, y_target: rand_y})
     
@@ -132,12 +128,16 @@ for i in range(100000):
     #train_acc = sess.run(accuracy, feed_dict = {x_data: x_vals,
     #                                            y_target: y_vals,
     #                                            prediction_grid: x_vals})
-    #if (i+1)%50==0:
-    print('Step #' + str(i+1))
-    print('Loss = ' + str(temp_loss))
-    print('batch_accuracy = ' + str(acc_temp))
+    if (i+1)%100==0:
+        print('Step #' + str(i+1))
+        print('Loss = ' + str(temp_loss))
+        print('batch_accuracy = ' + str(acc_temp))
     #    print('train_accuracy = ' + str(train_acc))
-    valid_prediction = sess.run(prediction, feed_dict={x_data: rand_x, y_target: rand_y, prediction_grid:validateFeatures})
-    valid_acc = sess.run(tf.reduce_mean(tf.cast(tf.equal(valid_prediction, tf.argmax(validateLabels,0)), tf.float32)))
-    print('validate_accuracy = ' + str(valid_acc))
-        
+        valid_prediction = sess.run(prediction, feed_dict={x_data: rand_x,
+                                             y_target: rand_y,
+                                             prediction_grid:validateFeatures})
+        valid_acc = sess.run(tf.reduce_mean(tf.cast(tf.equal(valid_prediction, tf.argmax(validateLabels,0)), tf.float32)))
+        print('validate_accuracy = ' + str(valid_acc))
+test_prediction = sess.run(prediction, feed_dict={x_data: rand_x, y_target: rand_y, prediction_grid:testFeatures})
+test_acc = sess.run(tf.reduce_mean(tf.cast(tf.equal(test_prediction, tf.argmax(testLabels, 0)), tf.float32)))
+print('test_accuray =' + str(test_acc))        
