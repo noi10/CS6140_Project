@@ -3,11 +3,19 @@
 #
 # This function wll illustrate how to
 # implement the gaussian kernel with
-# multiple classes on the yt8m dataset.
+# multiple classes on the iris dataset.
 #
 # Gaussian Kernel:
 # K(x1, x2) = exp(-gamma * abs(x1 - x2)^2)
 #
+# X : (Sepal Length, Petal Width)
+# Y: (I. setosa, I. virginica, I. versicolor) (3 classes)
+#
+# Basic idea: introduce an extra dimension to do
+# one vs all classification.
+#
+# The prediction of a point will be the category with
+# the largest margin or distance to boundary.
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,27 +25,27 @@ from tensorflow.python.framework import ops
 ops.reset_default_graph()
 
 
-with open('./txtdata/yt8m_100/train_features.txt','r') as infile:
+with open('./txtdata/yt8m_50_train_features.txt','r') as infile:
     trainFeatures = np.array(json.load(infile)).astype(np.float32)
 infile.close()
 
-with open('./txtdata/yt8m_100/validate_features.txt','r') as infile:
+with open('./txtdata/validate_features.txt','r') as infile:
     validateFeatures = np.array(json.load(infile)).astype(np.float32)
 infile.close()
 
-with open('./txtdata/yt8m_100/test_features.txt','r') as infile:
+with open('./txtdata/test_features.txt','r') as infile:
     testFeatures = np.array(json.load(infile)).astype(np.float32)
 infile.close()
 
-with open('./txtdata/yt8m_100/svm_train_labels.txt','r') as infile:
+with open('./txtdata/yt8m_50_svmtrain_labels.txt','r') as infile:
     trainLabels = np.array(json.load(infile)).astype(np.float32)
 infile.close()
 
-with open('./txtdata/yt8m_100/validate_labels.txt','r') as infile:
+with open('./txtdata/validate_labels.txt','r') as infile:
     validateLabels = np.transpose(np.array(json.load(infile)).astype(np.float32))
 infile.close()
 
-with open('./txtdata/yt8m_100/test_labels.txt','r') as infile:
+with open('./txtdata/test_labels.txt','r') as infile:
     testLabels = np.transpose(np.array(json.load(infile)).astype(np.float32))
 infile.close()
     
@@ -50,6 +58,7 @@ y_vals = np.transpose(trainLabels)
 
 # Declare batch size
 batch_size = 2048
+regulation_rate = 5e3
 
 # Initialize placeholders
 x_data = tf.placeholder(shape=[None, 1152], dtype=tf.float32)
@@ -58,16 +67,15 @@ prediction_grid = tf.placeholder(shape=[None, 1152], dtype=tf.float32)
 
 # Create variables for svm
 b = tf.Variable(tf.random_normal(shape=[10, batch_size]))
-
+#b = tf.Variable(tf.random_normal(shape=[10]))
 
 # Gaussian (RBF) kernel
-gamma = tf.constant(-0.05)
+gamma = tf.constant(-0.09)
 dist = tf.reduce_sum(tf.square(x_data), 1)
 dist = tf.reshape(dist, [-1,1])
 sq_dists = tf.add(tf.subtract(dist, tf.multiply(2., tf.matmul(x_data, tf.transpose(x_data)))), tf.transpose(dist))
 my_kernel = tf.exp(tf.multiply(gamma, tf.abs(sq_dists)))
 #my_kernel = tf.matmul(x_data, tf.transpose(x_data))
-
 # Declare function to do reshape/batch multiplication
 def reshape_matmul(mat):
     v1 = tf.expand_dims(mat, 1)
@@ -81,6 +89,7 @@ y_target_cross = reshape_matmul(y_target)
 
 second_term = tf.reduce_sum(tf.multiply(my_kernel, tf.multiply(b_vec_cross, y_target_cross)),[1,2])
 loss = tf.reduce_sum(tf.negative(tf.subtract(first_term, second_term)))
+#loss += regulation_rate * tf.nn.l2_loss(b)
 
 # Gaussian (RBF) prediction kernel
 rA = tf.reshape(tf.reduce_sum(tf.square(x_data), 1),[-1,1])
@@ -105,6 +114,10 @@ optimizer = tf.train.AdamOptimizer(0.01).minimize(loss)
 init = tf.global_variables_initializer()
 sess.run(init)
 
+loss_vec = []
+train_accuracy = []
+validate_accuracy = []
+
 # Training loop
 for i in range(2500):
     rand_index = np.random.choice(len(x_vals), size=batch_size)
@@ -114,21 +127,29 @@ for i in range(2500):
     sess.run(optimizer, feed_dict={x_data: rand_x, y_target: rand_y})
     
     temp_loss = sess.run(loss, feed_dict={x_data: rand_x, y_target: rand_y})
+    loss_vec.append(temp_loss)
+    #acc_temp = sess.run(accuracy, feed_dict={x_data: rand_x,
+    #                                         y_target: rand_y,
+    #                                         prediction_grid:rand_x})
     
-    acc_temp = sess.run(accuracy, feed_dict={x_data: rand_x,
-                                             y_target: rand_y,
-                                             prediction_grid:rand_x})
+    train_prediction = sess.run(prediction, feed_dict={x_data: rand_x, y_target: rand_y, prediction_grid:trainFeatures})
+    train_acc = sess.run(tf.reduce_mean(tf.cast(tf.equal(train_prediction, tf.argmax(trainLabels,1)), tf.float32)))
+    train_accuracy.append(train_acc)
 
+    valid_prediction = sess.run(prediction, feed_dict={x_data: rand_x, y_target: rand_y, prediction_grid:validateFeatures})
+    valid_acc = sess.run(tf.reduce_mean(tf.cast(tf.equal(valid_prediction, tf.argmax(validateLabels,0)), tf.float32)))
+    validate_accuracy.append(valid_acc)
+    #train_acc = sess.run(accuracy, feed_dict = {x_data: x_vals,
+    #                                            y_target: y_vals,
+    #                                            prediction_grid: x_vals})
     if (i+1)%100==0:
         print('Step #' + str(i+1))
         print('Loss = ' + str(temp_loss))
-        print('batch_accuracy = ' + str(acc_temp))
+        print('train_accuracy = ' + str(train_acc))
     #    print('train_accuracy = ' + str(train_acc))
-        valid_prediction = sess.run(prediction, feed_dict={x_data: rand_x,
-                                             y_target: rand_y,
-                                             prediction_grid:validateFeatures})
-        valid_acc = sess.run(tf.reduce_mean(tf.cast(tf.equal(valid_prediction, tf.argmax(validateLabels,0)), tf.float32)))
         print('validate_accuracy = ' + str(valid_acc))
 test_prediction = sess.run(prediction, feed_dict={x_data: rand_x, y_target: rand_y, prediction_grid:testFeatures})
 test_acc = sess.run(tf.reduce_mean(tf.cast(tf.equal(test_prediction, tf.argmax(testLabels, 0)), tf.float32)))
-print('test_accuray =' + str(test_acc))        
+print('test_accuray =' + str(test_acc))
+
+        

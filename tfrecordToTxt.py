@@ -19,7 +19,8 @@ def tftoTxt(dataType):
 
 #---------------------------------------------------------------------------------------------------#
 #---------------------------------------------------------------------------------------------------#
-        #vid_ids = []
+        #print(video_lvl_record)
+	#vid_ids = []
         labels = []
         mean_rgb = []
         mean_audio = []
@@ -62,17 +63,17 @@ def tftoTxt(dataType):
         for i in range(len(new_mean_rgb)):
                 new_mean_rgb[i] = new_mean_rgb[i] + new_mean_audio[i]
 
-        with open(dataType+'_features.txt','w') as myfile:
+        with open('./txtdata/yt8m_100_'+dataType+'_features.txt','w') as myfile:
                 json.dump(new_mean_rgb, myfile)
 
         myfile.close()
 
-        with open(dataType+'_labels.txt', 'w') as labelfile:
+        with open('./txtdata/yt8m_100_'+dataType+'_labels.txt', 'w') as labelfile:
                 json.dump(res_labels, labelfile)
 
         labelfile.close()
 
 tftoTxt("train")
-tftoTxt("validate")
-tftoTxt("test")
+#tftoTxt("validate")
+#tftoTxt("test")
 
