@@ -1,22 +1,3 @@
-# Multi-class (Nonlinear) SVM Example
-#----------------------------------
-#
-# This function wll illustrate how to
-# implement the gaussian kernel with
-# multiple classes on the iris dataset.
-#
-# Gaussian Kernel:
-# K(x1, x2) = exp(-gamma * abs(x1 - x2)^2)
-#
-# X : (Sepal Length, Petal Width)
-# Y: (I. setosa, I. virginica, I. versicolor) (3 classes)
-#
-# Basic idea: introduce an extra dimension to do
-# one vs all classification.
-#
-# The prediction of a point will be the category with
-# the largest margin or distance to boundary.
-
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
@@ -75,7 +56,8 @@ dist = tf.reduce_sum(tf.square(x_data), 1)
 dist = tf.reshape(dist, [-1,1])
 sq_dists = tf.add(tf.subtract(dist, tf.multiply(2., tf.matmul(x_data, tf.transpose(x_data)))), tf.transpose(dist))
 my_kernel = tf.exp(tf.multiply(gamma, tf.abs(sq_dists)))
-#my_kernel = tf.matmul(x_data, tf.transpose(x_data))
+
+
 # Declare function to do reshape/batch multiplication
 def reshape_matmul(mat):
     v1 = tf.expand_dims(mat, 1)
@@ -123,14 +105,10 @@ for i in range(2500):
     rand_index = np.random.choice(len(x_vals), size=batch_size)
     rand_x = x_vals[rand_index]
     rand_y = y_vals[:,rand_index]
-    #print(rand_y)
     sess.run(optimizer, feed_dict={x_data: rand_x, y_target: rand_y})
     
     temp_loss = sess.run(loss, feed_dict={x_data: rand_x, y_target: rand_y})
     loss_vec.append(temp_loss)
-    #acc_temp = sess.run(accuracy, feed_dict={x_data: rand_x,
-    #                                         y_target: rand_y,
-    #                                         prediction_grid:rand_x})
     
     train_prediction = sess.run(prediction, feed_dict={x_data: rand_x, y_target: rand_y, prediction_grid:trainFeatures})
     train_acc = sess.run(tf.reduce_mean(tf.cast(tf.equal(train_prediction, tf.argmax(trainLabels,1)), tf.float32)))
@@ -139,14 +117,10 @@ for i in range(2500):
     valid_prediction = sess.run(prediction, feed_dict={x_data: rand_x, y_target: rand_y, prediction_grid:validateFeatures})
     valid_acc = sess.run(tf.reduce_mean(tf.cast(tf.equal(valid_prediction, tf.argmax(validateLabels,0)), tf.float32)))
     validate_accuracy.append(valid_acc)
-    #train_acc = sess.run(accuracy, feed_dict = {x_data: x_vals,
-    #                                            y_target: y_vals,
-    #                                            prediction_grid: x_vals})
     if (i+1)%100==0:
         print('Step #' + str(i+1))
         print('Loss = ' + str(temp_loss))
         print('train_accuracy = ' + str(train_acc))
-    #    print('train_accuracy = ' + str(train_acc))
         print('validate_accuracy = ' + str(valid_acc))
 test_prediction = sess.run(prediction, feed_dict={x_data: rand_x, y_target: rand_y, prediction_grid:testFeatures})
 test_acc = sess.run(tf.reduce_mean(tf.cast(tf.equal(test_prediction, tf.argmax(testLabels, 0)), tf.float32)))

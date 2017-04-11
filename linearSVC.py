@@ -65,11 +65,6 @@ with graph.as_default():
     b_logit = tf.Variable(tf.zeros([num_labels]))
 
     logits = model(tf_train_dataset)
-    #logits = tf.matmul(tf_train_dataset, weights) + biases
-
-    #y = tf.reduce_sum(logits * tf_train_labels, 1, keep_dims=True)
-
-    #loss = tf.reduce_mean(tf.reduce_sum(tf.maximum(0.0, logits - y + delta), 1)) - delta
     loss = tf.reduce_mean(tf.maximum(0., tf.subtract(1., tf.multiply(logits, tf_train_labels) ) ))
     loss += regulation_rate * tf.nn.l2_loss(w_logit)
 
@@ -81,8 +76,6 @@ with graph.as_default():
     learning_rate = starter_learning_rate
     
     # define optimizer
-    #optimizer = train_step(loss, generation_num)
-    #optimizer = tf.train.AdamOptimizer(learning_rate).minimize(loss, global_step=global_step)
     optimizer = tf.train.AdamOptimizer(0.01).minimize(loss)
 
     # calculate predictions
@@ -119,7 +112,6 @@ with graph.as_default():
             if (step%100==0):
                 print("Minibatch loss at step %d: %f" % (step,l))
                 print("Minibatch accuracy: %.1f%%" % accuracy(predictions, batch_labels))
-                #print(session.run(predictions))
                 print("Validation accuracy: %.1f%%" % accuracy(valid_prediction.eval(), validateLabels))
         print("Test accuracy %.1f%%" % accuracy(test_prediction.eval(), testLabels))
     

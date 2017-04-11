@@ -4,7 +4,7 @@ import tensorflow as tf
 import json
 
 # data input
-with open('./txtdata/yt8m_100_train_features.txt','r') as infile:
+with open('./txtdata/yt8m_50_train_features.txt','r') as infile:
     trainFeatures = np.array(json.load(infile)).astype(np.float32)
 infile.close()
 
@@ -16,7 +16,7 @@ with open('./txtdata/test_features.txt','r') as infile:
     testFeatures = np.array(json.load(infile)).astype(np.float32)
 infile.close()
 
-with open('./txtdata/yt8m_100_train_labels.txt','r') as infile:
+with open('./txtdata/yt8m_50_train_labels.txt','r') as infile:
     trainLabels = np.array(json.load(infile)).astype(np.float32)
 infile.close()
 
